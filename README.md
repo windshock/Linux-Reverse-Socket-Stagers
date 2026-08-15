@@ -54,8 +54,12 @@ cleanly**, end to end, in something you can build and run.
 | # | technique | what it shows |
 |---|---|---|
 | [**01**](01-single-socket-reverse-stager/) | **Single-Socket Reverse Staging** | non-PIE ret2libc where `send(fd, got, 8)` leaks libc over the connected socket and `recv(fd, bss, n)` pulls stage-2 back — all in one chain — then `pop rsp` pivots into it. Full-ASLR `uid=0`. |
-| _(planned)_ | ret2dlresolve without a socket round-trip | leak-free stage-2 on non-PIE + Partial RELRO |
+| [**02**](02-front-load-source-hijack/) | **Front-Load Source-Hijack** | when a post-overflow output-path `memcpy` sources RIP from the *front* of the response, you place the chain at payload offset 0 instead of the return offset. Full-ASLR `uid=0`. |
+| [**03**](03-ret2csu-flags-zero/) | **ret2csu + flags=0** | drive `send`/`recv` by ROP with no `pop rdx` and no `pop rcx`: `%rdx` via `__libc_csu_init`, `flags=0` via real wrappers reached through a function-pointer table. Full-ASLR `uid=0`. |
 | _(planned)_ | PIE as the real boundary | the same bug degraded to remote DoS once PIE is on |
+
+Every lab is verified end-to-end in an isolated x86_64 container (`uid=0` under
+full ASLR), with both a marker payload and a real `/bin/sh` over the reused socket.
 
 Each folder is standalone: source, build, a one-click `run.sh`, and a writeup.
 
