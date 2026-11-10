@@ -1,5 +1,9 @@
 # Ropbot applicability to the three labs
 
+Upstream reference: [`sefcom/ropbot`](https://github.com/sefcom/ropbot). The
+ret2csu helper used here is proposed in
+[`sefcom/ropbot#1`](https://github.com/sefcom/ropbot/pull/1).
+
 The exploit chains were tested against the built x86_64 binaries with the
 angrop implementation used by the `ropbot` PR branch. The lab3 exploit now
 accepts `ROPBOT=1` and routes both ret2csu calls through `rop.ret2csu()`.

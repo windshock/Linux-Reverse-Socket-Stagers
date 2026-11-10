@@ -23,6 +23,15 @@ part of the technique they cover.
   (`pop rsp` stack pivoting): <https://ropemporium.com/>
 - pwntools ROP docs: <https://docs.pwntools.com/en/stable/rop/rop.html>
 
+## Automated ROP chain construction
+
+- sefcom — [`ropbot`](https://github.com/sefcom/ropbot), the angr-based gadget
+  finder and ROP chain generator used for the lab3 integration experiment.
+- Integration proposal: [`sefcom/ropbot#1`](https://github.com/sefcom/ropbot/pull/1),
+  adding an explicit `ret2csu()` helper for indirect `__libc_csu_init` calls.
+- The helper-backed lab3 path is selected with `ROPBOT=1`; the manual path
+  remains the default because angr is a heavyweight analysis dependency.
+
 ## Malicious server → connecting client (the "reverse" direction)
 
 - Check Point Research — **Reverse RDP Attack: Code Execution on RDP Clients**
