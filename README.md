@@ -97,6 +97,15 @@ The implementation notes are collected in [`docs/RETROSPECTIVE.md`](docs/RETROSP
 [`docs/COMPARISON-with-server-connect-sdk.md`](docs/COMPARISON-with-server-connect-sdk.md),
 and [`docs/ROPBOT-LAB3.md`](docs/ROPBOT-LAB3.md).
 
+Lab 3's explicit AMD64 `ret2csu()` helper is proposed upstream in
+[`angr/angrop#160`](https://github.com/angr/angrop/pull/160). Re-run the
+helper-backed marker and shell validation with:
+
+```bash
+cd 03-ret2csu-flags-zero
+ROPBOT=1 ./run.sh
+```
+
 ## License
 
 MIT — see [`LICENSE`](LICENSE). Educational use against the bundled lab only.
