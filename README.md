@@ -1,5 +1,7 @@
 # Linux-Reverse-Socket-Stagers
 
+**English (default) · [한국어 소개](https://windshock.github.io/ko/post/2026-08-15-reverse-single-socket-staging/)**
+
 Functional, self-contained demos of **socket-reuse staging for the "reverse"
 direction** — a *malicious/MITM server* corrupting the memory of a *client that
 dials out and trusts it*, and driving the whole leak-and-stage-2 flow over the
@@ -105,6 +107,10 @@ helper-backed marker and shell validation with:
 cd 03-ret2csu-flags-zero
 ROPBOT=1 ./run.sh
 ```
+
+The upstream helper is currently under review; the repository keeps the
+manual-chain path as the default and enables the helper explicitly with
+`ROPBOT=1`.
 
 ## License
 
