@@ -93,6 +93,10 @@ boundary) is on the blog:
 Consolidated in [`references.md`](references.md) — CWE/CAPEC mappings, the
 staged-leak lineage, the reverse-client-attack class, and socket-reuse stagers.
 
+The implementation notes are collected in [`docs/RETROSPECTIVE.md`](docs/RETROSPECTIVE.md),
+[`docs/COMPARISON-with-server-connect-sdk.md`](docs/COMPARISON-with-server-connect-sdk.md),
+and [`docs/ROPBOT-LAB3.md`](docs/ROPBOT-LAB3.md).
+
 ## License
 
 MIT — see [`LICENSE`](LICENSE). Educational use against the bundled lab only.
