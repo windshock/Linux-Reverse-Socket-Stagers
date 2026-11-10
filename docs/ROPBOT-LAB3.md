@@ -1,11 +1,13 @@
 # Ropbot applicability to the three labs
 
-Upstream reference: [`sefcom/ropbot`](https://github.com/sefcom/ropbot). The
+Upstream reference: [`angr/angrop`](https://github.com/angr/angrop). The
 ret2csu helper used here is proposed in
-[`sefcom/ropbot#1`](https://github.com/sefcom/ropbot/pull/1).
+[`angr/angrop#160`](https://github.com/angr/angrop/pull/160), with the earlier
+prototype tracked in [`sefcom/ropbot#1`](https://github.com/sefcom/ropbot/pull/1).
 
 The exploit chains were tested against the built x86_64 binaries with the
-angrop implementation used by the `ropbot` PR branch. The lab3 exploit now
+angrop implementation from the upstream development branch plus the local
+`ret2csu()` patch. The lab3 exploit now
 accepts `ROPBOT=1` and routes both ret2csu calls through `rop.ret2csu()`.
 
 For labs 1 and 2, gadget discovery found the planted pop gadgets and
@@ -24,7 +26,8 @@ in an x86 analysis environment, the helper-backed exploit passed both marker
 mode (`uid=0`) and shell mode (`SHELL_OK`) under ASLR=2. The repository-level
 command `ROPBOT=1 ./run.sh` now reproduces that test by selecting
 `Dockerfile.ropbot`, which builds the target under Ubuntu 20.04/glibc 2.31 and
-installs the PR branch in a Python 3.10 runtime.
+installs the pre-merge helper branch in a Python 3.10 runtime. The same helper
+was then re-tested with angr/angrop development HEADs under Python 3.12.
 
 The practical integration boundary is gadget discovery and ordinary register
 setup. Protocol sequencing, leak arithmetic, fd selection, stage-2 delivery,

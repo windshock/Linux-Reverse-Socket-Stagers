@@ -25,10 +25,11 @@ part of the technique they cover.
 
 ## Automated ROP chain construction
 
-- sefcom — [`ropbot`](https://github.com/sefcom/ropbot), the angr-based gadget
-  finder and ROP chain generator used for the lab3 integration experiment.
-- Integration proposal: [`sefcom/ropbot#1`](https://github.com/sefcom/ropbot/pull/1),
+- angr — [`angrop`](https://github.com/angr/angrop), the upstream gadget finder
+  and ROP chain generator used for the lab3 integration experiment.
+- Upstream integration PR: [`angr/angrop#160`](https://github.com/angr/angrop/pull/160),
   adding an explicit `ret2csu()` helper for indirect `__libc_csu_init` calls.
+- Prototype reference: [`sefcom/ropbot#1`](https://github.com/sefcom/ropbot/pull/1).
 - The helper-backed lab3 path is selected with `ROPBOT=1`; the manual path
   remains the default because angr is a heavyweight analysis dependency.
 
