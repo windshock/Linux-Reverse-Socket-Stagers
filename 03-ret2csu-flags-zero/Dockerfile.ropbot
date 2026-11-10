@@ -1,0 +1,17 @@
+FROM --platform=linux/amd64 ubuntu:20.04 AS target-build
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update && apt-get install -y --no-install-recommends gcc make libc6-dev && rm -rf /var/lib/apt/lists/*
+WORKDIR /build
+COPY src/ /build/src/
+RUN make -C src && cp src/vuln_client3 /build/vuln_client3
+
+# Bullseye ships glibc 2.31 and Python 3.10, which is required by current angr.
+FROM --platform=linux/amd64 python:3.10-slim-bullseye
+ENV DEBIAN_FRONTEND=noninteractive
+RUN pip install --no-cache-dir pwntools && \
+    pip install --no-cache-dir bitarray==3.0.0 && \
+    pip install --no-cache-dir 'https://github.com/windshock/ropbot/archive/refs/heads/feat/ret2csu-chain-builder.tar.gz#subdirectory=ropbot' && \
+    rm -rf /var/lib/apt/lists/*
+WORKDIR /work
+COPY --from=target-build /build/vuln_client3 /work/vuln_client3
+COPY exploit/ /work/exploit/

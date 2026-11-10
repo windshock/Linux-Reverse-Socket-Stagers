@@ -21,10 +21,13 @@ memory. Lab 3 found its gadgets but could not synthesize the requested
 custom `fnptr[]` table, outside the normal direct `func_call()` model. The new
 explicit `ret2csu()` helper handles that dispatch. With the PR branch installed
 in an x86 analysis environment, the helper-backed exploit passed both marker
-mode (`uid=0`) and shell mode (`SHELL_OK`) under ASLR=2.
+mode (`uid=0`) and shell mode (`SHELL_OK`) under ASLR=2. The repository-level
+command `ROPBOT=1 ./run.sh` now reproduces that test by selecting
+`Dockerfile.ropbot`, which builds the target under Ubuntu 20.04/glibc 2.31 and
+installs the PR branch in a Python 3.10 runtime.
 
 The practical integration boundary is gadget discovery and ordinary register
 setup. Protocol sequencing, leak arithmetic, fd selection, stage-2 delivery,
-front-load limits remain exploit-specific. Run with `ROPBOT=1` to select the
-helper; the default `ROPBOT=0` path retains the manual chain for environments
+front-load limits remain exploit-specific. Run with `ROPBOT=1 ./run.sh` to select
+the helper-backed container; the default `ROPBOT=0` path retains the manual chain for environments
 where angr is not installed.
