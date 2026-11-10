@@ -10,7 +10,7 @@ echo "[*] building lab image (Ubuntu 20.04 / glibc 2.31 for __libc_csu_init) ...
 docker build --platform=linux/amd64 -t "$IMAGE" .
 
 echo "[*] running exploit under full ASLR ..."
-docker run --rm --platform=linux/amd64 --privileged "$IMAGE" bash -lc '
+docker run --rm --platform=linux/amd64 --privileged -e ROPBOT "$IMAGE" bash -lc '
   set -e
   ulimit -c unlimited
   echo core > /proc/sys/kernel/core_pattern

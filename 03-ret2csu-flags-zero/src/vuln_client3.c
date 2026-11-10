@@ -13,8 +13,8 @@
  *      entries.
  *
  *   2. There is no `pop rdx` here, so %rdx (the length) is set with **ret2csu**:
- *      __libc_csu_init's `mov rdx,r15 ; mov rsi,r14 ; mov edi,r13d ;
- *      call [r12+rbx*8]` gadget. (This is why the lab builds on glibc 2.31 —
+ *      __libc_csu_init's `mov rdx,r14 ; mov rsi,r13 ; mov edi,r12d ;
+ *      call [r15+rbx*8]` gadget. (This is why the lab builds on glibc 2.31 —
  *      glibc >= 2.34 removed __libc_csu_init.)
  *
  * The "boring" gadgets (pop rdi / pop rsp / ret) used for the final stage-2 are
