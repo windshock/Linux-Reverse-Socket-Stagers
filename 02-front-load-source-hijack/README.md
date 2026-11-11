@@ -42,6 +42,9 @@ body   = <ROP chain>          # at offset 0 — front-loaded
 
 Everything downstream is identical to 01. Verified end-to-end (`uid=0` under
 full ASLR), both a marker payload and a real `/bin/sh` over the reused socket.
+The runtime leak and stage-2 handoff use the reusable
+`exploit/staged_rop.py` adapter; the front-loaded chain remains specific to
+this lab.
 
 ## Run
 

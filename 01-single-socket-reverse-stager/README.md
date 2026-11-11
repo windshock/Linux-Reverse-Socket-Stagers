@@ -117,6 +117,7 @@ leak loses its fixed anchor, and the same bug degrades to a remote **DoS**.
 | `src/Makefile` | builds it No-PIE / No-canary / Partial-RELRO |
 | `exploit/find_offset.py` | measures the saved-RIP offset via a core dump |
 | `exploit/evil_server.py` | malicious server + single-socket staged exploit |
+| `exploit/staged_rop.py` | reusable leak-resolution and stage-2 delivery adapter |
 | `Dockerfile`, `run.sh` | isolated, reproducible x86_64 lab |
 
 ## Adjusting the offset
