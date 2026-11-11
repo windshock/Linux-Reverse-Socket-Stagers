@@ -34,3 +34,13 @@ setup. Protocol sequencing, leak arithmetic, fd selection, stage-2 delivery,
 front-load limits remain exploit-specific. Run with `ROPBOT=1 ./run.sh` to select
 the helper-backed container; the default `ROPBOT=0` path retains the manual chain for environments
 where angr is not installed.
+
+## Runtime staging adapter
+
+The repository now keeps the runtime half separate in
+`03-ret2csu-flags-zero/exploit/staged_rop.py`. `StagedRopSession` receives the
+stage-1 leak, resolves the libc base, and delivers stage 2 over the existing
+socket. angrop remains responsible only for constructing and validating the ROP
+bytes; the adapter owns the network/session boundary. This is the reusable
+multi-stage application layer, rather than functionality that belongs inside
+angrop itself.

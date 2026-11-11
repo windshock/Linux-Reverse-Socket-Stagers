@@ -112,6 +112,10 @@ The upstream helper is currently under review; the repository keeps the
 manual-chain path as the default and enables the helper explicitly with
 `ROPBOT=1`.
 
+The staged runtime adapter in `03-ret2csu-flags-zero/exploit/staged_rop.py`
+handles leak resolution and stage-2 delivery, while angrop remains focused on
+ROP chain construction.
+
 ## License
 
 MIT — see [`LICENSE`](LICENSE). Educational use against the bundled lab only.
