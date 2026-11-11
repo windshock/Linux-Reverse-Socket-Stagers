@@ -12,17 +12,19 @@ validation.
 | Lab 1 | Gadget discovery | Available; the `ANGROP=1` path loads the binary with angr/angrop | Harness supplies the lab's planted gadget addresses and protocol context |
 | Lab 1 | Register setup / ordinary calls | Available through `RopChain`/builder APIs; concrete chain generation verified | Harness supplies fd, GOT address, stage buffer, and call order |
 | Lab 1 | Stack pivot | Available as an angrop builder capability | Harness supplies the pivot destination and embeds it in the staged protocol |
-| Lab 1 | Leak, libc calculation, stage-2 transport | Not an angrop responsibility | `StagedRopSession` receives the leak, rebases libc, builds runtime stage 2, and sends it |
+| Lab 1 | Leak, libc calculation, stage-2 transport | Outside angrop's chain-builder scope | `StagedRopSession` receives the leak, rebases libc, builds runtime stage 2, and sends it |
 | Lab 2 | Ordinary ROP chain generation | Available; concrete chain generation verified with `ANGROP=1` | Harness supplies the front-loaded chain values |
-| Lab 2 | Front-load RIP / formatter semantics | Not modeled by angrop | Harness places chain at response offset 0 and sets the formatter slot count |
-| Lab 2 | Leak and stage-2 runtime | Not an angrop responsibility | `StagedRopSession` handles leak, libc rebase, and same-socket delivery |
+| Lab 2 | Front-load RIP / formatter semantics | Outside angrop's chain-builder scope; not a lack of ordinary ROP APIs | Harness places chain at response offset 0 and sets the formatter slot count |
+| Lab 2 | Leak and stage-2 runtime | Outside angrop's chain-builder scope | `StagedRopSession` handles leak, libc rebase, and same-socket delivery |
 | Lab 3 | Ordinary `func_call()` for CSU indirect call | Insufficient for this lab's indirect CSU layout | Harness selects the CSU/table addresses |
 | Lab 3 | Explicit `ret2csu()` helper | Supported by the proposed upstream PR #160; integration verified | Harness passes the CSU parameters and appends the staged runtime flow |
-| Lab 3 | Leak, libc calculation, stage-2 transport | Not an angrop responsibility | `StagedRopSession` handles the runtime boundary |
+| Lab 3 | Leak, libc calculation, stage-2 transport | Outside angrop's chain-builder scope | `StagedRopSession` handles the runtime boundary |
 
 In all three labs the harness owns socket lifecycle, protocol headers, leak
 parsing, libc rebasing, stage-2 transport, shell/marker verification, and
-retry/timeout behavior. angrop owns ROP gadget analysis and chain bytes only.
+retry/timeout behavior. These are not “unsupported angrop features”; they are
+runtime protocol orchestration outside a ROP chain builder's responsibility.
+angrop owns ROP gadget analysis and chain bytes only.
 
 Run `scripts/angrop_capabilities.py` inside an angr/angrop environment to
 report the installed API surface and whether each lab binary is present:
