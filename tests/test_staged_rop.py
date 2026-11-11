@@ -35,6 +35,11 @@ class FakeConn:
         self.sent.append(data)
 
 
+class TimeoutConn(FakeConn):
+    def recv(self, _size):
+        raise TimeoutError("simulated socket timeout")
+
+
 def load_session(path):
     name = "staged_rop_test_" + path.parent.parent.name.replace("-", "_")
     spec = importlib.util.spec_from_file_location(name, path)
@@ -86,3 +91,12 @@ def test_stage2_delivery_is_byte_exact(path):
     session.deliver_stage2(payload)
 
     assert conn.sent == [payload]
+
+
+@pytest.mark.parametrize("path", MODULES)
+def test_socket_timeout_is_not_silently_converted_to_a_leak(path):
+    Session = load_session(path)
+    session = Session(TimeoutConn(), FakeLibc(), 6)
+
+    with pytest.raises(TimeoutError, match="simulated socket timeout"):
+        session.receive_leak("send")
