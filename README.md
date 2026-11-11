@@ -98,6 +98,8 @@ staged-leak lineage, the reverse-client-attack class, and socket-reuse stagers.
 The implementation notes are collected in [`docs/RETROSPECTIVE.md`](docs/RETROSPECTIVE.md),
 [`docs/COMPARISON-with-server-connect-sdk.md`](docs/COMPARISON-with-server-connect-sdk.md),
 and [`docs/ROPBOT-LAB3.md`](docs/ROPBOT-LAB3.md).
+The per-lab angrop boundary is summarized in
+[`docs/ANGROP-CAPABILITY-MATRIX.md`](docs/ANGROP-CAPABILITY-MATRIX.md).
 
 Lab 3's explicit AMD64 `ret2csu()` helper is proposed upstream in
 [`angr/angrop#160`](https://github.com/angr/angrop/pull/160). Re-run the
