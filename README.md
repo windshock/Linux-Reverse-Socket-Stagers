@@ -89,6 +89,7 @@ boundary) is on the blog:
 
 - 🇰🇷 <https://windshock.github.io/ko/post/2026-08-15-reverse-single-socket-staging/>
 - 🇬🇧 <https://windshock.github.io/en/post/2026-08-15-reverse-single-socket-staging/>
+- 🧪 <https://windshock.github.io/lab/rop-ai-tool-interfaces/>
 
 ## References
 
