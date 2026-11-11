@@ -34,8 +34,11 @@ LABS = {
 def load_angrop():
     if importlib.util.find_spec("angr") is None or importlib.util.find_spec("angrop") is None:
         return None, "angr/angrop is not installed"
-    import angr  # type: ignore
-    import angrop  # noqa: F401  # type: ignore
+    try:
+        import angr  # type: ignore
+        import angrop  # noqa: F401  # type: ignore
+    except Exception as exc:  # dependency/runtime mismatch
+        return None, f"angr/angrop import failed: {exc}"
     return angr, None
 
 
@@ -59,6 +62,17 @@ def main() -> int:
                  "pivot", "do_syscall", "sigreturn", "ret2csu"):
         print(f"| {name} | available on ChainBuilder: {'yes' if hasattr(builder, name) else 'no'} |")
 
+    # Distinguish an importable API from a minimally working chain builder.
+    # This catches installations where the symbols exist but payload creation
+    # is broken by a dependency mismatch.
+    from angrop.rop_chain import RopChain
+    smoke_chain = RopChain(probe, builder, badbytes=builder.badbytes)
+    smoke_chain.add_value(0x4141414141414141)
+    smoke_payload = smoke_chain._blank_state.solver.eval(
+        smoke_chain.payload_bv(), cast_to=bytes
+    )
+    print(f"\n- RopChain.add_value/payload_bv smoke test: {'PASS' if smoke_payload else 'FAIL'}")
+
     for lab, meta in LABS.items():
         binary = args.root / meta["binary"]
         print(f"\n## {lab}")
@@ -68,6 +82,7 @@ def main() -> int:
         project = angr.Project(str(binary), auto_load_libs=False)
         builder = project.analyses.ROP().chain_builder
         print(f"- explicit `ret2csu`: {'yes' if hasattr(builder, 'ret2csu') else 'no'}")
+        print(f"- chain builder initialized: {'yes' if builder is not None else 'no'}")
         print(f"- external runtime boundary: {meta['external']}")
         print(f"- lab-specific boundary: {meta['special']}")
     return 0

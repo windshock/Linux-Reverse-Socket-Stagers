@@ -9,10 +9,11 @@ validation.
 
 | Lab | Interface | angrop support | Harness handling |
 |---|---|---|---|
-| Lab 1 | Gadget discovery | Available; the `ANGROP=1` path loads the binary with angr/angrop | Harness supplies the lab's planted gadget addresses and protocol context |
+| Lab 1 | Gadget discovery / binary analysis | Available in angrop, but not invoked by the current `ANGROP=1` path | Harness supplies the lab's planted gadget addresses and protocol context |
 | Lab 1 | Register setup / ordinary calls | Available through `RopChain`/builder APIs; concrete chain generation verified | Harness supplies fd, GOT address, stage buffer, and call order |
 | Lab 1 | Stack pivot | Available as an angrop builder capability | Harness supplies the pivot destination and embeds it in the staged protocol |
 | Lab 1 | Leak, libc calculation, stage-2 transport | Outside angrop's chain-builder scope | `StagedRopSession` receives the leak, rebases libc, builds runtime stage 2, and sends it |
+| Lab 2 | Gadget discovery / binary analysis | Available in angrop, but not invoked by the current `ANGROP=1` path | Harness supplies the front-loaded chain values |
 | Lab 2 | Ordinary ROP chain generation | Available; concrete chain generation verified with `ANGROP=1` | Harness supplies the front-loaded chain values |
 | Lab 2 | Front-load RIP / formatter semantics | Outside angrop's chain-builder scope; not a lack of ordinary ROP APIs | Harness places chain at response offset 0 and sets the formatter slot count |
 | Lab 2 | Leak and stage-2 runtime | Outside angrop's chain-builder scope | `StagedRopSession` handles leak, libc rebase, and same-socket delivery |
@@ -36,6 +37,11 @@ python3 scripts/angrop_capabilities.py
 The report is an availability probe, not a guarantee that a chain can be
 synthesized for every binary. Actual gadget constraints and lab-specific
 placement rules still require an integration run.
+
+The three `staged_rop.py` files remain colocated with their standalone lab
+entry points on purpose: each lab can be copied and run independently. Their
+`StagedRopSession` interfaces are kept identical, and the rebasing regression
+check covers repeated leak resolution without relying on a shared import path.
 
 The integration runs are selected with `ANGROP=1 ./run.sh` for Labs 1 and 2,
 and `ROPBOT=1 ./run.sh` for Lab 3. Each path prints its active chain builder
