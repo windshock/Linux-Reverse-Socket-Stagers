@@ -122,6 +122,25 @@ Labs 1 and 2 can build their concrete stack chains through angrop's
 `RopChain` API with `ANGROP=1 ./run.sh`; Lab 3 uses the explicit helper path
 with `ROPBOT=1 ./run.sh`.
 
+## Regression tests
+
+Install the lightweight development dependency and run the runtime/interface
+regression tests from the repository root:
+
+```bash
+python3 -m pip install -r requirements-dev.txt
+python3 -m pytest -q
+```
+
+These tests cover fragmented leaks, repeated libc rebasing, short-leak
+failures, byte-exact stage-2 delivery, and the structured angrop interface.
+The `run.sh` commands remain the authoritative full-container marker/shell
+integration checks. The same checks are available as opt-in pytest tests:
+
+```bash
+RUN_LAB_INTEGRATION=1 python3 -m pytest -q -m integration
+```
+
 ## License
 
 MIT — see [`LICENSE`](LICENSE). Educational use against the bundled lab only.
