@@ -98,6 +98,8 @@ staged-leak lineage, the reverse-client-attack class, and socket-reuse stagers.
 The implementation notes are collected in [`docs/RETROSPECTIVE.md`](docs/RETROSPECTIVE.md),
 [`docs/COMPARISON-with-server-connect-sdk.md`](docs/COMPARISON-with-server-connect-sdk.md),
 and [`docs/ROPBOT-LAB3.md`](docs/ROPBOT-LAB3.md).
+The observed Hinoki direct-vs-tool-assisted comparison is documented in
+[`docs/AB-EXPERIMENT.md`](docs/AB-EXPERIMENT.md).
 The per-lab angrop boundary is summarized in
 [`docs/ANGROP-CAPABILITY-MATRIX.md`](docs/ANGROP-CAPABILITY-MATRIX.md).
 

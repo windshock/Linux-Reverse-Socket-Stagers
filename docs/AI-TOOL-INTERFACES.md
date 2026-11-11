@@ -64,21 +64,27 @@ The script reports per-condition means and success rate. It prints
 success values. Model/API execution and trace capture remain external so the
 same model, binary, environment, oracle, and budget can be held constant.
 
-## Observed Hinoki Lab baseline
+## Observed Hinoki A/B result
 
-The supplied Hinoki dashboard snapshot covers the work used to write the
-remote-command execution exploits for Labs 1, 2, and 3. It is therefore the
-baseline for this experiment, rather than an unrelated account-wide sample:
+The supplied Hinoki dashboard snapshots cover the work used to write and
+validate the remote-command execution exploits for Labs 1, 2, and 3. The
+comparison is:
 
-| Period | Product | Usage | Credit spend |
+| Condition | Workflow | Usage | Credit spend |
 |---|---|---:|---:|
-| Lab 1 + Lab 2 + Lab 3 exploit work | Inference | 61M tokens | $7.04 |
-| Same dashboard snapshot | Hinoki Cloud Agent | 0 tokens | — |
-| Same dashboard snapshot | Agentic scans | 0 tokens | — |
+| A — direct baseline | Model writes the Lab 1/2/3 exploits directly | 61M tokens | $7.04 |
+| B — tool-assisted | `angrop` + `ropbot` + `pwntools` + `StagedRopSession`, followed by Docker validation | 15.3M tokens | $2.21 |
 
-This implies an observed aggregate rate of approximately `$0.115/M tokens` for
-the reported Lab work. The snapshot does not split usage by Lab, input versus
-output, or direct-analysis versus tool-assisted condition. It is therefore a
-valid total Hinoki baseline, but not yet an A/B result. The harness still
-requires per-run traces to measure whether tool use reduces tokens, retries, or
-time under the same scope.
+The dashboard totals imply approximately **4.0x lower token usage** and **74.9%
+fewer tokens** for B. Credit spend is approximately **3.2x lower**, a **68.6%
+reduction**. B was run in two sessions: one existing-path verification and one
+actual tool-assisted implementation and integration run. Both sessions used the
+same synthetic Lab 1/2/3 scope; the latter passed marker and shell validation
+for all three Labs with ASLR enabled.
+
+These are dashboard aggregates, not per-request traces: they do not split input
+from output, assign cost to an individual Lab, or provide the JSONL records
+consumed by `scripts/ab_experiment.py`. Therefore the result is an observed
+end-to-end A/B comparison, not a claim that every individual request achieves
+the same reduction. The harness remains available for finer-grained repeated
+runs.
