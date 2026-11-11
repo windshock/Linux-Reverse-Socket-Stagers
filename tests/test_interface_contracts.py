@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 from pathlib import Path
 
 
@@ -23,6 +24,23 @@ def test_structured_angrop_interface_is_exposed():
     for path in MODULES:
         module = load_module(path)
         assert callable(module.analyze_binary)
+        assert callable(module.analysis_summary)
         assert callable(module.build_rop_chain)
+        assert callable(module.build_rop_chain_summary)
         assert callable(module.payload)
-        assert module.payload.__doc__ is None or isinstance(module.payload.__doc__, str)
+
+
+def test_analysis_and_error_summaries_are_json_serializable():
+    module = load_module(MODULES[0])
+    summary = module.analysis_summary({
+        "binary": "/tmp/vuln",
+        "gadget_count": 3,
+        "verified_gadgets": (0x401000, 0x401010),
+    })
+    assert summary == {
+        "ok": True,
+        "binary": "/tmp/vuln",
+        "gadget_count": 3,
+        "verified_gadgets": ["0x401000", "0x401010"],
+    }
+    json.dumps(summary)

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 import sys
 from pathlib import Path
 
@@ -67,6 +68,7 @@ def test_fragmented_leak_rebases_and_preserves_symbol_offset(path):
     assert first.base == base1
     assert second.base == base2
     assert libc.address == base2
+    json.dumps(first.to_dict())
 
 
 @pytest.mark.parametrize("path", MODULES)
@@ -77,7 +79,10 @@ def test_short_leak_fails_and_delivery_remains_explicit(path):
 
     with pytest.raises(RuntimeError, match="short leak"):
         session.receive_leak("send")
-    session.deliver_stage2(b"stage2")
+    summary = session.receive_leak_summary("send")
+    assert summary["ok"] is False
+    delivery = session.deliver_stage2(b"stage2")
+    assert delivery == {"ok": True, "bytes_sent": 6}
     assert conn.sent == [b"stage2"]
 
 
@@ -88,7 +93,7 @@ def test_stage2_delivery_is_byte_exact(path):
     session = Session(conn, FakeLibc(), 6)
     payload = b"\x00stage2\xff"
 
-    session.deliver_stage2(payload)
+    assert session.deliver_stage2(payload) == {"ok": True, "bytes_sent": len(payload)}
 
     assert conn.sent == [payload]
 
