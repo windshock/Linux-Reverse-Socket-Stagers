@@ -64,19 +64,21 @@ The script reports per-condition means and success rate. It prints
 success values. Model/API execution and trace capture remain external so the
 same model, binary, environment, oracle, and budget can be held constant.
 
-## Observed Hinoki account baseline
+## Observed Hinoki Lab baseline
 
-The supplied Hinoki dashboard snapshot records the following account-level
-baseline (UTC):
+The supplied Hinoki dashboard snapshot covers the work used to write the
+remote-command execution exploits for Labs 1, 2, and 3. It is therefore the
+baseline for this experiment, rather than an unrelated account-wide sample:
 
 | Period | Product | Usage | Credit spend |
 |---|---|---:|---:|
-| Last 30 days | Inference | 61M tokens | $7.04 |
-| Last 30 days | Hinoki Cloud Agent | 0 tokens | — |
-| Last 30 days | Agentic scans | 0 tokens | — |
+| Lab 1 + Lab 2 + Lab 3 exploit work | Inference | 61M tokens | $7.04 |
+| Same dashboard snapshot | Hinoki Cloud Agent | 0 tokens | — |
+| Same dashboard snapshot | Agentic scans | 0 tokens | — |
 
-This implies an observed aggregate rate of approximately `$0.115/M tokens`,
-but it is **not** a per-task measurement for these Labs. It may include other
-work performed during the same period and does not separate input from output
-tokens. The A/B harness therefore leaves this value as contextual baseline
-metadata; task-level conclusions require per-run traces with the same scope.
+This implies an observed aggregate rate of approximately `$0.115/M tokens` for
+the reported Lab work. The snapshot does not split usage by Lab, input versus
+output, or direct-analysis versus tool-assisted condition. It is therefore a
+valid total Hinoki baseline, but not yet an A/B result. The harness still
+requires per-run traces to measure whether tool use reduces tokens, retries, or
+time under the same scope.
