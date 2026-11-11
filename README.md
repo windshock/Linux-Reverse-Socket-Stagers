@@ -118,6 +118,10 @@ The staged runtime adapter in `03-ret2csu-flags-zero/exploit/staged_rop.py`
 handles leak resolution and stage-2 delivery, while angrop remains focused on
 ROP chain construction.
 
+Labs 1 and 2 can build their concrete stack chains through angrop's
+`RopChain` API with `ANGROP=1 ./run.sh`; Lab 3 uses the explicit helper path
+with `ROPBOT=1 ./run.sh`.
+
 ## License
 
 MIT — see [`LICENSE`](LICENSE). Educational use against the bundled lab only.

@@ -53,6 +53,9 @@ this lab.
 ./run.sh
 ```
 
+Use `ANGROP=1 ./run.sh` to build the concrete chain through angrop's
+`RopChain` API; the front-load placement remains harness-specific.
+
 ```
 [srv] socket leak -> libc base=0x...
 MODE=marker → uid=0(root) ...

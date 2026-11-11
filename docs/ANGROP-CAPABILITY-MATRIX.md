@@ -7,8 +7,8 @@ validation.
 
 | Lab interface | angrop can help with | Harness responsibility | Result |
 |---|---|---|---|
-| Lab 1 single-socket | register setup, calls, pivot, memory operations | `StagedRopSession` reads the 8-byte `send` leak, computes `libc_base = leak - libc.send`, builds the runtime `system` stage, and sends it over the same socket | runtime adapter applied; chain remains manual |
-| Lab 2 front-load | ordinary chain construction and gadget analysis | harness places the chain at response offset 0, sets the formatter's front-slot count, then reuses the same leak/base/stage-2 flow | front-load semantics remain harness-specific |
+| Lab 1 single-socket | register setup, calls, pivot, memory operations | `StagedRopSession` reads the 8-byte `send` leak, computes `libc_base = leak - libc.send`, builds the runtime `system` stage, and sends it over the same socket | `ANGROP=1` builds the concrete chain through `RopChain`; marker/shell PASS |
+| Lab 2 front-load | ordinary chain construction and gadget analysis | harness places the angrop-built chain at response offset 0, sets the formatter's front-slot count, then reuses the same leak/base/stage-2 flow | `ANGROP=1` builds the concrete chain through `RopChain`; front-load semantics remain harness-specific |
 | Lab 3 ret2csu | explicit `ret2csu()` helper plus ordinary chain APIs | harness selects CSU/table addresses, invokes `ret2csu()`, receives the leak, resolves libc, and delivers stage 2 through `StagedRopSession` | helper and runtime adapter both integrated |
 
 In all three labs the harness owns socket lifecycle, protocol headers, leak
@@ -25,3 +25,7 @@ python3 scripts/angrop_capabilities.py
 The report is an availability probe, not a guarantee that a chain can be
 synthesized for every binary. Actual gadget constraints and lab-specific
 placement rules still require an integration run.
+
+The integration runs are selected with `ANGROP=1 ./run.sh` for Labs 1 and 2,
+and `ROPBOT=1 ./run.sh` for Lab 3. Each path prints its active chain builder
+and verifies both marker and shell modes.

