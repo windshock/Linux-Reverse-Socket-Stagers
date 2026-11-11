@@ -51,9 +51,13 @@ def main() -> int:
     print(f"angr: {angr.__version__}")
     print("\n| Capability | API surface |")
     print("|---|---|")
+    # Use a tiny real project so the report reflects the installed API rather
+    # than claiming support from a hard-coded list.
+    probe = angr.Project("/bin/true", auto_load_libs=False)
+    builder = probe.analyses.ROP().chain_builder
     for name in ("set_regs", "move_regs", "func_call", "write_to_mem",
-                 "pivot", "do_syscall", "sigreturn"):
-        print(f"| {name} | available on ChainBuilder: yes |")
+                 "pivot", "do_syscall", "sigreturn", "ret2csu"):
+        print(f"| {name} | available on ChainBuilder: {'yes' if hasattr(builder, name) else 'no'} |")
 
     for lab, meta in LABS.items():
         binary = args.root / meta["binary"]
