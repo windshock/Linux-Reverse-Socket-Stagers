@@ -63,3 +63,20 @@ The script reports per-condition means and success rate. It prints
 `NOT_TESTED` when no records are supplied; it never fabricates token, cost, or
 success values. Model/API execution and trace capture remain external so the
 same model, binary, environment, oracle, and budget can be held constant.
+
+## Observed Hinoki account baseline
+
+The supplied Hinoki dashboard snapshot records the following account-level
+baseline (UTC):
+
+| Period | Product | Usage | Credit spend |
+|---|---|---:|---:|
+| Last 30 days | Inference | 61M tokens | $7.04 |
+| Last 30 days | Hinoki Cloud Agent | 0 tokens | — |
+| Last 30 days | Agentic scans | 0 tokens | — |
+
+This implies an observed aggregate rate of approximately `$0.115/M tokens`,
+but it is **not** a per-task measurement for these Labs. It may include other
+work performed during the same period and does not separate input from output
+tokens. The A/B harness therefore leaves this value as contextual baseline
+metadata; task-level conclusions require per-run traces with the same scope.
