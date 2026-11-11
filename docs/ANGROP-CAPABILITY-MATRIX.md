@@ -5,11 +5,20 @@ runtime adapter (`exploit/staged_rop.py`) handles leak reception, libc-base
 resolution, and stage-2 delivery. angrop handles only chain construction and
 validation.
 
-| Lab interface | angrop can help with | Harness responsibility | Result |
+## Interface-level result
+
+| Lab | Interface | angrop support | Harness handling |
 |---|---|---|---|
-| Lab 1 single-socket | register setup, calls, pivot, memory operations | `StagedRopSession` reads the 8-byte `send` leak, computes `libc_base = leak - libc.send`, builds the runtime `system` stage, and sends it over the same socket | `ANGROP=1` builds the concrete chain through `RopChain`; marker/shell PASS |
-| Lab 2 front-load | ordinary chain construction and gadget analysis | harness places the angrop-built chain at response offset 0, sets the formatter's front-slot count, then reuses the same leak/base/stage-2 flow | `ANGROP=1` builds the concrete chain through `RopChain`; front-load semantics remain harness-specific |
-| Lab 3 ret2csu | explicit `ret2csu()` helper plus ordinary chain APIs | harness selects CSU/table addresses, invokes `ret2csu()`, receives the leak, resolves libc, and delivers stage 2 through `StagedRopSession` | helper and runtime adapter both integrated |
+| Lab 1 | Gadget discovery | Available; the `ANGROP=1` path loads the binary with angr/angrop | Harness supplies the lab's planted gadget addresses and protocol context |
+| Lab 1 | Register setup / ordinary calls | Available through `RopChain`/builder APIs; concrete chain generation verified | Harness supplies fd, GOT address, stage buffer, and call order |
+| Lab 1 | Stack pivot | Available as an angrop builder capability | Harness supplies the pivot destination and embeds it in the staged protocol |
+| Lab 1 | Leak, libc calculation, stage-2 transport | Not an angrop responsibility | `StagedRopSession` receives the leak, rebases libc, builds runtime stage 2, and sends it |
+| Lab 2 | Ordinary ROP chain generation | Available; concrete chain generation verified with `ANGROP=1` | Harness supplies the front-loaded chain values |
+| Lab 2 | Front-load RIP / formatter semantics | Not modeled by angrop | Harness places chain at response offset 0 and sets the formatter slot count |
+| Lab 2 | Leak and stage-2 runtime | Not an angrop responsibility | `StagedRopSession` handles leak, libc rebase, and same-socket delivery |
+| Lab 3 | Ordinary `func_call()` for CSU indirect call | Insufficient for this lab's indirect CSU layout | Harness selects the CSU/table addresses |
+| Lab 3 | Explicit `ret2csu()` helper | Supported by the proposed upstream PR #160; integration verified | Harness passes the CSU parameters and appends the staged runtime flow |
+| Lab 3 | Leak, libc calculation, stage-2 transport | Not an angrop responsibility | `StagedRopSession` handles the runtime boundary |
 
 In all three labs the harness owns socket lifecycle, protocol headers, leak
 parsing, libc rebasing, stage-2 transport, shell/marker verification, and
