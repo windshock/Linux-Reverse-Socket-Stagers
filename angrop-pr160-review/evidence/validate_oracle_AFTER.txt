@@ -1,0 +1,9 @@
+=== build returning chain ===
+  next_pc_idx = 15 (None => NOT returning)
+=== chainability: chain + chain ===
+  chain+chain OK, total values = 31
+=== ORACLE: symbolic exec of the chain ===
+  net_send captured: {'edi': '0x41414141', 'rsi': '0x42424242', 'rdx': '0x43434343'}
+  args correct (edi=FD,rsi=BUF,rdx=LEN)? True
+  final pc symbolic (==returned to next_pc)? True
+  RESULT: PASS

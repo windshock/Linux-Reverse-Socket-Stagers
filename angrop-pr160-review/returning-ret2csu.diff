@@ -1,0 +1,215 @@
+diff --git a/angrop/chain_builder/func_caller.py b/angrop/chain_builder/func_caller.py
+index 39cae71..f8937e1 100644
+--- a/angrop/chain_builder/func_caller.py
++++ b/angrop/chain_builder/func_caller.py
+@@ -1,3 +1,4 @@
++import copy
+ import struct
+ import logging
+ 
+@@ -178,6 +179,140 @@ class FuncCaller(Builder):
+             chain = pre_chain + chain
+         return chain
+ 
++    def _parse_csu_dispatch(self, pc_target):
++        """
++        For a csu-style indirect call `call [base + idx*scale]`, return (base_reg, idx_reg).
++        Returns None if pc_target is not of that shape.
++        """
++        if pc_target is None or pc_target.op != '__add__':
++            return None
++        base_reg = idx_reg = None
++        for arg in pc_target.args:
++            if arg.op == 'BVS' and arg.args[0].startswith('sreg_'):
++                base_reg = arg.args[0][5:].split('-')[0]
++            elif arg.op in ('__lshift__', '__mul__'):
++                for sub in rop_utils.children_asts(arg):
++                    if sub.op == 'BVS' and sub.args[0].startswith('sreg_'):
++                        idx_reg = sub.args[0][5:].split('-')[0]
++                        break
++        if base_reg and idx_reg:
++            return base_reg, idx_reg
++        return None
++
++    def _discover_csu_epilogue(self, g, base_reg, idx_reg):
++        """
++        B1: discover how a csu-style dispatch gadget returns after its `call [base+idx*8]`,
++        by symbolic execution (no hardcoded glibc layout).
++
++        We execute from g.addr with:
++          - idx = 0, base = a scratch table whose entry 0 is a stub that returns at once,
++          - every other register left symbolic,
++          - the stack filled with distinct *symbolic* words.
++        The csu epilogue then runs; where control finally `ret`s determines everything:
++          - cleanup_slots = index of the stack word that becomes the (unconstrained) pc,
++          - pins = the input-register values the solver *requires* to reach that clean
++            return (e.g. the loop cap rbp==1 so the dispatch loop runs exactly once),
++            excluding base_reg (set to the real function pointer later).
++
++        Returns {'cleanup_slots': int, 'pins': {reg: val}} or None if no clean return
++        path is found (then g is treated as non-returning).
++        """
++        p = self.project
++        STACK = 0x41410000
++        TABLE = 0x42420000
++
++        # a stub at FAKE that simply returns (pops the return address), so the indirect
++        # call comes straight back into the epilogue.
++        FAKE = 0x43430000
++        p.hook(FAKE, angr.SIM_PROCEDURES['stubs']['ReturnUnconstrained'](), replace=True)
++        try:
++            return self._discover_csu_epilogue_inner(g, base_reg, idx_reg, STACK, TABLE, FAKE)
++        finally:
++            p.unhook(FAKE)
++
++    def _discover_csu_epilogue_inner(self, g, base_reg, idx_reg, STACK, TABLE, FAKE):
++        import re
++        p = self.project
++        abytes = p.arch.bytes
++        bits = p.arch.bits
++
++        st = p.factory.blank_state(addr=g.addr, add_options={
++            angr.options.SYMBOL_FILL_UNCONSTRAINED_MEMORY,
++            angr.options.SYMBOL_FILL_UNCONSTRAINED_REGISTERS})
++        end = p.arch.memory_endness
++        setattr(st.regs, idx_reg, claripy.BVV(0, bits))
++        setattr(st.regs, base_reg, claripy.BVV(TABLE, bits))
++        st.memory.store(TABLE, claripy.BVV(FAKE, bits), endness=end)
++        st.regs.sp = claripy.BVV(STACK, bits)
++
++        # candidate input registers whose required values we will read back
++        cand = {base_reg, idx_reg}
++        for m in g.reg_moves:
++            cand.add(m.from_reg)
++        for r in ('rbx', 'rbp', 'r12', 'r13', 'r14', 'r15'):
++            if hasattr(st.regs, r):
++                cand.add(r)
++        init_regs = {r: getattr(st.regs, r) for r in cand}
++
++        # fill stack slots with *symbolic* words so a `ret` into any of them yields an
++        # unconstrained pc we can trace back to its slot index.
++        nslots = 32
++        for i in range(nslots):
++            st.memory.store(STACK + i*abytes,
++                            claripy.BVS("csuslot_%d" % i, bits), endness=end)
++
++        simgr = p.factory.simulation_manager(st, save_unconstrained=True)
++        for _ in range(200):
++            if not (simgr.active or simgr.unconstrained):
++                break
++            for u in simgr.unconstrained:
++                names = [v for v in u.regs.pc.variables if v.startswith("csuslot_")]
++                if len(names) != 1:
++                    continue
++                cleanup_slots = int(re.match(r"csuslot_(\d+)", names[0]).group(1))
++                pins = {}
++                for r, sym in init_regs.items():
++                    if r == base_reg:
++                        continue
++                    vals = u.solver.eval_upto(sym, 2)
++                    if len(vals) == 1:
++                        pins[r] = vals[0]
++                return {'cleanup_slots': int(cleanup_slots), 'pins': pins}
++            simgr.step()
++        return None
++
++    def _try_csu_return(self, g, registers, ptr_to_func):
++        """
++        Blocker B: assemble a RETURNING ret2csu through a csu-style dispatch gadget g
++        (`mov args->arg_regs; call [base+idx*8]`). Returns a RopChain, or None if g is
++        not a returning csu dispatch (caller then falls back to a terminal call).
++        """
++        parsed = self._parse_csu_dispatch(getattr(g, 'pc_target', None))
++        if parsed is None:
++            return None
++        base_reg, idx_reg = parsed
++        epi = self._discover_csu_epilogue(g, base_reg, idx_reg)
++        if epi is None:
++            return None
++        cleanup_slots = epi['cleanup_slots']
++
++        # B3: pin the loop-control / table-index regs that discovery found are required
++        # for the epilogue to return cleanly (e.g. idx=0, cap=1). base_reg is excluded by
++        # discovery; for the single-entry case (idx=0) it must equal the function pointer.
++        extra = dict(registers)
++        extra.update(epi['pins'])
++        extra[base_reg] = ptr_to_func
++
++        # B2: carry the epilogue on a copy of the gadget so _func_call's existing return
++        # loop lays out [fill]*cleanup_slots + next_pc (see func_caller return handling).
++        g2 = copy.copy(g)
++        g2.stack_change = (cleanup_slots + 1) * self.project.arch.bytes
++        g2.pc_offset = cleanup_slots
++        try:
++            return self._func_call(g2, self._cc, [], extra_regs=extra, needs_return=True)
++        except RopException:
++            return None
++
+     def func_call(self, address, args, **kwargs):
+         """
+         :param address: address or name of function to call
+@@ -211,14 +346,11 @@ class FuncCaller(Builder):
+         except RopException:
+             pass
+ 
+-        # well, let's try non-self-contained gadgets, but this time, we don't guarantee returns
+-        needs_return = kwargs.get("needs_return", None)
+-        if needs_return:
+-            raise RopException("fail to invoke function and return using all self-contained gadgets")
+-        if needs_return is None:
+-            s = symbol if symbol else hex(address)
+-            l.warning("function %s won't return!", s)
+-            kwargs['needs_return'] = False
++        # well, let's try non-self-contained gadgets.
++        # a csu-style dispatch (`mov args; call [base+idx*8]`) returns through its
++        # epilogue, so for those we CAN still honor needs_return; plain jmp gadgets
++        # (e.g. `pop rdi; jmp rax`) cannot, and keep the old fire-and-forget behavior.
++        want_return = kwargs.get("needs_return", None)   # True / False / None
+ 
+         # try func_jmp_gadgets
+         register_args = args[:len(self._cc.ARG_REGS)]
+@@ -235,8 +367,14 @@ class FuncCaller(Builder):
+                 # build the new target registers
+                 registers = registers.copy()
+                 skip = False
++                # RELAXED GUARD (Blocker A): keep a multi-move gadget as long as it
++                # supplies at least one otherwise-unsettable ("hard") arg register.
++                # The csu dispatch also moves into rdi/rsi (settable), which the old
++                # `move.to_reg not in hard_regs` test rejected wholesale.
++                if not any(m.to_reg in hard_regs for m in g.reg_moves):
++                    continue
+                 for move in g.reg_moves:
+-                    if move.from_reg in hard_regs or move.to_reg not in hard_regs:
++                    if move.from_reg in hard_regs:
+                         skip = True
+                         break
+                     if move.to_reg in registers.keys():
+@@ -252,12 +390,24 @@ class FuncCaller(Builder):
+ 
+                 if g.transit_type != 'jmp_mem':
+                     raise NotImplementedError("currently only support jmp_mem type func_jmp_gadgets!")
+-                #func_gadget.stack_change = self.project.arch.bytes
+-                #func_gadget.pc_offset = 0
+-                # try to invoke the function using the new target registers
++
++                # Blocker B: try a RETURNING csu-style call first.
++                if want_return is not False:
++                    csu = self._try_csu_return(g, registers.copy(), ptr_to_func)
++                    if csu is not None:
++                        return csu
++                    if want_return:
++                        # caller demanded a return but this gadget cannot provide one
++                        continue
++
++                # fall back to the original terminal (non-returning) jmp_mem call
++                if want_return is None:
++                    l.warning("function %s won't return!", symbol if symbol else hex(address))
++                kw = dict(kwargs)
++                kw['needs_return'] = False
+                 try:
+                     return self._func_call(g, self._cc, [], extra_regs=registers,
+-                                           jmp_mem_target=ptr_to_func, **kwargs)
++                                           jmp_mem_target=ptr_to_func, **kw)
+                 except RopException:
+                     pass
+ 

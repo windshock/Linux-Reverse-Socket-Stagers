@@ -1,0 +1,18 @@
+diff --git a/angrop/chain_builder/func_caller.py b/angrop/chain_builder/func_caller.py
+index 39cae71..198be6f 100644
+--- a/angrop/chain_builder/func_caller.py
++++ b/angrop/chain_builder/func_caller.py
+@@ -235,8 +235,12 @@ class FuncCaller(Builder):
+                 # build the new target registers
+                 registers = registers.copy()
+                 skip = False
++                # CANDIDATE RELAXATION (under review): use the gadget if it supplies
++                # >=1 otherwise-unsettable arg reg; route its other moves too.
++                if not any(m.to_reg in hard_regs for m in g.reg_moves):
++                    continue
+                 for move in g.reg_moves:
+-                    if move.from_reg in hard_regs or move.to_reg not in hard_regs:
++                    if move.from_reg in hard_regs:
+                         skip = True
+                         break
+                     if move.to_reg in registers.keys():

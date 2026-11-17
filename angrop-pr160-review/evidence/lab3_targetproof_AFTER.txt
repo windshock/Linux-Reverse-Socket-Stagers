@@ -1,0 +1,12 @@
+csu @ 0x4014d0
+gadgets: 197
+
+[lab3 needs: send(leak) RETURNS -> recv(stage2) RETURNS -> pivot]
+-- returning ret2csu calls (what the leak+stage flow requires) --
+  net_send(fd,got,8) needs_return=True             -> BUILT (2 gadgets)
+  send(fd,got,8)     needs_return=True             -> BUILT (2 gadgets)
+  net_recv(fd,bss,n) needs_return=True             -> BUILT (2 gadgets)
+-- chaining two calls (leak THEN stage2 in one chain) --
+  net_send(...) + net_recv(...)                    -> BUILT (4 gadgets)
+-- what angrop CAN do: a single terminal (fire-and-forget) call --
+  net_send(...) default (fire-and-forget)          -> BUILT (2 gadgets)
