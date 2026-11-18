@@ -1,13 +1,8 @@
 diff --git a/angrop/chain_builder/func_caller.py b/angrop/chain_builder/func_caller.py
-index 39cae71..c3cddb8 100644
+index 39cae71..a64fb6c 100644
 --- a/angrop/chain_builder/func_caller.py
 +++ b/angrop/chain_builder/func_caller.py
-@@ -1,3 +1,4 @@
-+import copy
- import struct
- import logging
- 
-@@ -25,6 +26,11 @@ class FuncCaller(Builder):
+@@ -25,6 +25,11 @@ class FuncCaller(Builder):
          # invoke a function and still maintain the control flow afterwards (call rax; ret)
          # TODO: currently not supported
          self._func_call_gadgets = None
@@ -19,7 +14,7 @@ index 39cae71..c3cddb8 100644
          # record the calling convention
          self._cc = angr.default_cc(
                              self.project.arch.name,
-@@ -178,6 +184,154 @@ class FuncCaller(Builder):
+@@ -178,6 +183,158 @@ class FuncCaller(Builder):
              chain = pre_chain + chain
          return chain
  
@@ -163,7 +158,11 @@ index 39cae71..c3cddb8 100644
 +
 +        # B2: carry the epilogue on a copy of the gadget so _func_call's existing return
 +        # loop lays out [fill]*cleanup_slots + next_pc (see func_caller return handling).
-+        g2 = copy.copy(g)
++        # MUST use RopGadget.copy(), NOT copy.copy(): copy.copy routes through
++        # __getstate__ (which nulls `project` for pickling), leaving the synthesized
++        # gadget with project=None — then str(chain)/dstr()/payload_code() raise
++        # AttributeError on every returning chain (independent-review finding NF1).
++        g2 = g.copy()
 +        g2.stack_change = (cleanup_slots + 1) * self.project.arch.bytes
 +        g2.pc_offset = cleanup_slots
 +        try:
@@ -174,7 +173,7 @@ index 39cae71..c3cddb8 100644
      def func_call(self, address, args, **kwargs):
          """
          :param address: address or name of function to call
-@@ -211,14 +365,11 @@ class FuncCaller(Builder):
+@@ -211,14 +368,11 @@ class FuncCaller(Builder):
          except RopException:
              pass
  
@@ -194,7 +193,7 @@ index 39cae71..c3cddb8 100644
  
          # try func_jmp_gadgets
          register_args = args[:len(self._cc.ARG_REGS)]
-@@ -235,8 +386,14 @@ class FuncCaller(Builder):
+@@ -235,8 +389,14 @@ class FuncCaller(Builder):
                  # build the new target registers
                  registers = registers.copy()
                  skip = False
@@ -210,7 +209,7 @@ index 39cae71..c3cddb8 100644
                          skip = True
                          break
                      if move.to_reg in registers.keys():
-@@ -252,12 +409,24 @@ class FuncCaller(Builder):
+@@ -252,12 +412,24 @@ class FuncCaller(Builder):
  
                  if g.transit_type != 'jmp_mem':
                      raise NotImplementedError("currently only support jmp_mem type func_jmp_gadgets!")

@@ -1,0 +1,9 @@
+CTRL {"label": "S1_nrFalse", "ok": false, "exc": "RopException: fail to invoke function: 0x4011c6"}
+CTRL {"label": "S2_nrNone", "ok": false, "exc": "RopException: fail to invoke function: 0x4011c6"}
+CTRL {"label": "S3_nrTrue", "ok": false, "exc": "RopException: fail to invoke function and return using all self-contained gadgets"}
+CTRL {"label": "S0_syms", "syms": ["net_recv", "net_send"]}
+CTRL {"label": "S5_seeds", "g0_ok": true, "g1_ok": true}
+CTRL {"label": "S5_nrFalse", "ok": true, "words": ["0x4005e6", "0x0", "0x1ffffffffffffffd", "0x0", "0x601028", "0x41414141", "0x4242424242424242", "0x4343434343434343", "0x4005d0"], "gadgets": ["0x4005e6", "0x4005d0"]}
+CTRL {"label": "S5_nrNone", "ok": true, "words": ["0x4005e6", "0x0", "0x1ffffffffffefffd", "0x0", "0x681028", "0x41414141", "0x4242424242424242", "0x4343434343434343", "0x4005d0"], "gadgets": ["0x4005e6", "0x4005d0"]}
+CTRL {"label": "S5_nrTrue", "ok": false, "exc": "RopException: fail to invoke function and return using all self-contained gadgets"}
+CTRL {"label": "S6_i386_optimize", "ok": true}

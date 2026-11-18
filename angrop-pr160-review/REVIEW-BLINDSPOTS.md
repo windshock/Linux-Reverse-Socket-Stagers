@@ -133,3 +133,36 @@ Still open for the maintainer: #1 (guard rationale), #2 (None semantics — meas
 pristine 9-word terminal vs patched 17-word returning on the seeded scenario), #3
 (no copy.copy leak found), #4a (parser matches a pure `jmp [base+idx*8]` shape; still
 semantically correct for returning callees, unchanged by these fixes).
+
+---
+
+## Update 2026-11-19 — INDEPENDENT v2 review (V2-ADVERSARIAL-VERDICT.md): one claim above was FALSE
+
+A fresh-context agent re-reviewed the v2 diff with its own probes (`probes2/`), per the
+package's methodology (the 2026-11-18 fixes were implemented by the same agent that
+wrote the 11-17 review, so they were NOT independent — this second pass is). Results:
+
+- **My "#3 no copy.copy leak found" above was FALSE (finding NF1, now fixed).**
+  `copy.copy(g)` routes through `RopGadget.__getstate__` (which nulls `project` for
+  pickling), so the synthesized returning gadget had `project=None`, and
+  `str(chain)`/`dstr()`/`payload_code()` raised AttributeError on EVERY returning
+  chain (reproduced: `print(chain)` crashed). Fix applied: `g2 = g.copy()`
+  (RopGadget.copy preserves project) — diff is now +185/−13, round-trip re-verified;
+  post-fix: 53/53, lab3 all BUILT, both oracles PASS, `str(chain)` renders correctly.
+- **NF2 (disclose, pre-existing from the original B1 code):** discovery hooks scratch
+  address 0x43430000 with `replace=True` and unhooks in a `finally` — a USER hook
+  already installed at that address is silently destroyed. A mapped-segment collision
+  was argued out of scope. Suggested PR-text disclosure (or save/restore the prior hook).
+- **NF3 (disclose, NEW with F2):** the pre-existing transient hook race becomes STICKY
+  under negative caching — a raced unhook can cache a permanent `None`, making later
+  returning `func_call`s hard-fail. Live 4-thread race was clean; hazard is model-level.
+- Everything else SURVIVED genuine attack: core mechanism re-proven with an independent
+  dual oracle (real machine-code callee + sentinel), suite full-dir failure set identical
+  to pristine (control), ARMEL census exactly the 4 reported addrs (discovery None in
+  0.0000s), gate proven sole-entry and cost-only residual on non-Linux AMD64, cache
+  proven correct across different target functions from one entry, no aliasing/mutation,
+  costs re-measured (0.1068s→0.0148s, n=20), diff round-trip byte-identical, 53/53.
+
+Net verdict (per the independent reviewer): safe to share as a DRAFT PR after NF1 —
+now fixed — with NF2/NF3 disclosed in the PR text. Remaining for the maintainer:
+#1 (guard rationale), #2 (None semantics).
