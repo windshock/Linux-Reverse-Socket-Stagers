@@ -62,12 +62,15 @@ else:
     ok_calls = len(calls) == 2 and calls[0] == A1 and calls[1] == A2
     print("both calls in order with correct args:", ok_calls)
     hit = lambda a: a in seen
+    # NOTE: angr steps whole basic blocks, so `seen` holds block-start addresses;
+    # the epilogue's individual `ret` (0x401534) is the tail of the block that
+    # starts at 0x401526/0x40152a, so reaching EPILOGUE + a satisfiable sentinel
+    # pc is the correct "returned through the epilogue" criterion here.
     print("trace hits DISPATCH(0x401510):", hit(DISPATCH),
           "| post-call LOOPCHK(0x40151d):", hit(LOOPCHK),
-          "| EPILOGUE add rsp(0x401526):", hit(EPILOGUE),
-          "| EPILOGUE ret(0x401534):", hit(RET))
+          "| EPILOGUE add rsp/pops block(0x401526):", hit(EPILOGUE))
     print("trace:", [hex(a) for a in seen])
-    print("RESULT:", "PASS" if (ok_calls and sat and hit(EPILOGUE) and hit(RET) and hit(DISPATCH)) else "FAIL")
+    print("RESULT:", "PASS" if (ok_calls and sat and hit(EPILOGUE) and hit(DISPATCH)) else "FAIL")
 
 print("\nc1 payload words:")
 for i, v in enumerate(c1._values):

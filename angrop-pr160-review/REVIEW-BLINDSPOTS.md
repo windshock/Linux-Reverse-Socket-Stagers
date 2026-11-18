@@ -106,3 +106,30 @@ maintainer's design knowledge or broader off-suite testing**. Presenting the pat
 *prototype with these questions attached* (not as a proven-safe change) is the honest frame:
 "here is a working mechanism and independent evidence; these five+one areas need your
 judgment or a wider test."
+
+---
+
+## Update 2026-11-18 — blindspots #4b and #5 addressed in the diff (post-review fixes)
+
+The independent adversarial review (`INDEPENDENT-REVIEW-VERDICT.md`) found two of the
+unknowns above are NOT benign, and the diff now contains the fixes (still one file,
+`func_caller.py`, now +182/−13):
+
+- **#5 (other arches) — the "safe fallback" assumption was wrong.** Real ARM glibc 2.31
+  contains 4 jmp_mem gadgets whose pc_target parses as csu-style (`0x4b985f/0x4b9861/
+  0x4b9863/0x44361f`), and running discovery on the first one stalled >11 min CPU
+  (vs 0.09s/gadget on AMD64). Fix: `_discover_csu_epilogue` now returns None unless
+  `project.arch.name == "AMD64"` — non-x86-64 falls back to the old terminal behavior
+  until the mechanism is proven there. Measured after the fix: all 4 ARM gadgets →
+  None in 0.00s.
+- **#4b (per-call cost) — confirmed real, now cached.** Measured 0.106s per returning
+  `func_call` on the lab target, all of it discovery, re-paid on every call. Fix:
+  per-gadget-addr cache on the FuncCaller (None results cached too); after the first
+  call, subsequent returning `func_call`s drop to 0.015s.
+
+Regression state after both fixes: `tests/test_chainbuilder.py` 53/53; lab3 target-proof
+all BUILT; independent exec-level oracle (dual-call + trace + sentinel) PASS.
+Still open for the maintainer: #1 (guard rationale), #2 (None semantics — measured
+pristine 9-word terminal vs patched 17-word returning on the seeded scenario), #3
+(no copy.copy leak found), #4a (parser matches a pure `jmp [base+idx*8]` shape; still
+semantically correct for returning callees, unchanged by these fixes).

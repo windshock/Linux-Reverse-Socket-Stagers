@@ -1,5 +1,5 @@
 diff --git a/angrop/chain_builder/func_caller.py b/angrop/chain_builder/func_caller.py
-index 39cae71..f8937e1 100644
+index 39cae71..c3cddb8 100644
 --- a/angrop/chain_builder/func_caller.py
 +++ b/angrop/chain_builder/func_caller.py
 @@ -1,3 +1,4 @@
@@ -7,7 +7,19 @@ index 39cae71..f8937e1 100644
  import struct
  import logging
  
-@@ -178,6 +179,140 @@ class FuncCaller(Builder):
+@@ -25,6 +26,11 @@ class FuncCaller(Builder):
+         # invoke a function and still maintain the control flow afterwards (call rax; ret)
+         # TODO: currently not supported
+         self._func_call_gadgets = None
++        # cache of csu-epilogue discovery results, keyed by gadget address.
++        # discovery is a pure function of (gadget, binary), so each gadget pays the
++        # symbolic execution at most once per FuncCaller; None ("not a returning
++        # dispatch") is cached too, so non-csu gadgets also pay the cost only once.
++        self._csu_epilogue_cache = {}
+         # record the calling convention
+         self._cc = angr.default_cc(
+                             self.project.arch.name,
+@@ -178,6 +184,154 @@ class FuncCaller(Builder):
              chain = pre_chain + chain
          return chain
  
@@ -49,6 +61,18 @@ index 39cae71..f8937e1 100644
 +        Returns {'cleanup_slots': int, 'pins': {reg: val}} or None if no clean return
 +        path is found (then g is treated as non-returning).
 +        """
++        # the returning-ret2csu mechanism is only proven on x86-64 (AMD64). the
++        # pc_target parser CAN still match on other arches (e.g. ARM glibc 2.31 has
++        # 4 such jmp_mem gadgets) and there the discovery symbolic execution stalls
++        # for minutes (>11min CPU measured on one ARM gadget, vs 0.09s on AMD64),
++        # so gate it off and let the caller fall back to a terminal call. See
++        # INDEPENDENT-REVIEW-VERDICT.md (review finding C6-5).
++        if self.project.arch.name != "AMD64":
++            return None
++        # per-gadget cache: repeated func_call()s must not re-pay the symbolic exec
++        if g.addr in self._csu_epilogue_cache:
++            return self._csu_epilogue_cache[g.addr]
++
 +        p = self.project
 +        STACK = 0x41410000
 +        TABLE = 0x42420000
@@ -58,9 +82,11 @@ index 39cae71..f8937e1 100644
 +        FAKE = 0x43430000
 +        p.hook(FAKE, angr.SIM_PROCEDURES['stubs']['ReturnUnconstrained'](), replace=True)
 +        try:
-+            return self._discover_csu_epilogue_inner(g, base_reg, idx_reg, STACK, TABLE, FAKE)
++            result = self._discover_csu_epilogue_inner(g, base_reg, idx_reg, STACK, TABLE, FAKE)
 +        finally:
 +            p.unhook(FAKE)
++        self._csu_epilogue_cache[g.addr] = result
++        return result
 +
 +    def _discover_csu_epilogue_inner(self, g, base_reg, idx_reg, STACK, TABLE, FAKE):
 +        import re
@@ -148,7 +174,7 @@ index 39cae71..f8937e1 100644
      def func_call(self, address, args, **kwargs):
          """
          :param address: address or name of function to call
-@@ -211,14 +346,11 @@ class FuncCaller(Builder):
+@@ -211,14 +365,11 @@ class FuncCaller(Builder):
          except RopException:
              pass
  
@@ -168,7 +194,7 @@ index 39cae71..f8937e1 100644
  
          # try func_jmp_gadgets
          register_args = args[:len(self._cc.ARG_REGS)]
-@@ -235,8 +367,14 @@ class FuncCaller(Builder):
+@@ -235,8 +386,14 @@ class FuncCaller(Builder):
                  # build the new target registers
                  registers = registers.copy()
                  skip = False
@@ -184,7 +210,7 @@ index 39cae71..f8937e1 100644
                          skip = True
                          break
                      if move.to_reg in registers.keys():
-@@ -252,12 +390,24 @@ class FuncCaller(Builder):
+@@ -252,12 +409,24 @@ class FuncCaller(Builder):
  
                  if g.transit_type != 'jmp_mem':
                      raise NotImplementedError("currently only support jmp_mem type func_jmp_gadgets!")
