@@ -9,7 +9,11 @@ PY="${PY:-python3.12}"
 echo "[*] venv + angr stack (angr 10.0.7, angrop from HEAD)"
 $PY -m venv venv
 ./venv/bin/pip -q install --upgrade pip
-./venv/bin/pip -q install "angr==10.0.7" "claripy==9.3.7" "z3-solver==5.3.3.0" pytest setuptools keystone-engine
+# angr 10.0.7 vendors claripy internally (angr.rustylib.claripy — no top-level
+# claripy module) and pins z3-solver==5.3.3.0 itself. Do NOT pin claripy/z3 here:
+# claripy 9.3.7 requires z3-solver==4.13.0.0, which cannot co-resolve with
+# angr 10.0.7 (pip ResolutionImpossible — see INDEPENDENT-REVIEW-VERDICT.md R1).
+./venv/bin/pip -q install "angr==10.0.7" pytest setuptools keystone-engine
 
 echo "[*] angrop upstream HEAD (editable)"
 git clone --quiet https://github.com/angr/angrop.git angrop-src
